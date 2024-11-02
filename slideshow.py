@@ -67,6 +67,7 @@ class SlideshowApp:
         self.pictures_list = pictures_list
         self.slide_duration = slide_duration * 1000  # Convert to milliseconds
         self.index = 0
+        self.shown_images = 0  # Initialize counter for shown images
 
         # Create a label for displaying images
         self.image_label = tk.Label(self.root)
@@ -77,12 +78,40 @@ class SlideshowApp:
 
     def show_image(self):
         img = Image.open(self.pictures_list[self.index])
-        img = img.resize((800, 600), Image.LANCZOS)
-        self.tk_image = ImageTk.PhotoImage(img)
+         # Obtenir la taille de l'écran
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        # Calculer le ratio pour redimensionner l'image
+        ratio = min(screen_width / img.width, screen_height / img.height)
+        new_width = int(img.width * ratio)
+        new_height = int(img.height * ratio)
+        # Redimensionner l'image
+        resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+        # convert to tkinter image and update display
+        self.tk_image = ImageTk.PhotoImage(resized_img)
         self.image_label.config(image=self.tk_image)
+        # set to full screen
+        self.root.geometry(f"{screen_width}x{screen_height}")
+        self.root.attributes("-fullscreen", True)
 
-        self.index = (self.index + 1) % len(self.pictures_list)
-        self.root.after(self.slide_duration, self.show_image)
+        # Associer la touche Échap pour quitter le plein écran
+        self.root.bind("<Escape>", self.exit_fullscreen)
+
+         # Move to the next image, but only if not the last one
+        self.index += 1
+        self.shown_images += 1  # Increment the count of displayed images
+
+        # Schedule the next image update if not on the last image
+        if self.shown_images < len(self.pictures_list):
+            self.root.after(self.slide_duration, self.show_image)
+        
+    def exit_fullscreen(self, event=None):
+        # Désactiver le plein écran
+            self.root.attributes("-fullscreen", False)
+            
+
+
+
 
 # ** Main Script Logic **
 
